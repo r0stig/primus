@@ -2706,12 +2706,16 @@ function WebSocketTransport(transUrl, ignore, options) {
     self.ws.close();
   });
   this.ws.onclose = function(e) {
-    self.emit('close', e.code, e.reason);
-    self._cleanup();
+    if (!self.closing) {
+      self.emit('close', e.code, e.reason);
+      self._cleanup();
+    }
   };
   this.ws.onerror = function(e) {
-    self.emit('close', 1006, 'WebSocket connection broken');
-    self._cleanup();
+    if (!self.closing) {
+      self.emit('close', 1006, 'WebSocket connection broken');
+      self._cleanup();
+    }
   };
 }
 
@@ -2723,10 +2727,12 @@ WebSocketTransport.prototype.send = function(data) {
 };
 
 WebSocketTransport.prototype.close = function() {
+  this.closing = true
   if (this.ws) {
     this.ws.close();
   }
   this._cleanup();
+  this.closing = false
 };
 
 WebSocketTransport.prototype._cleanup = function() {
